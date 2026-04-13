@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +6,6 @@
   <title>Disaster Management - Disasters</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* --- Styles for the form and table --- */
     .disasters-table {
       width: 100%;
       border-collapse: collapse;
@@ -17,19 +15,24 @@
       border-radius: 8px;
       overflow: hidden;
     }
+
     .disasters-table th {
       background: #6a5dfc;
       color: white;
       padding: 12px;
       text-align: left;
     }
+
     .disasters-table td {
       padding: 12px;
       border-bottom: 1px solid #e0e0e0;
+      vertical-align: middle;
     }
+
     .disasters-table tr:hover {
       background: #f5f5f5;
     }
+
     .data-form {
       max-width: 600px;
       margin: 0 auto;
@@ -37,10 +40,12 @@
       flex-direction: column;
       gap: 15px;
     }
+
     .data-form label {
       font-weight: 600;
       color: #333;
     }
+
     .data-form input,
     .data-form select {
       padding: 12px;
@@ -48,6 +53,7 @@
       border-radius: 8px;
       font-size: 16px;
     }
+
     .primary-btn {
       padding: 14px 28px;
       background: linear-gradient(90deg, #6a5dfc, #8056ff);
@@ -59,9 +65,42 @@
       cursor: pointer;
       margin-top: 10px;
     }
+
     .primary-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(106, 93, 252, 0.3);
+    }
+
+    .logout-btn,
+    .delete-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      color: white;
+    }
+
+    .delete-btn {
+      background: #dc2626;
+      color: white;
+    }
+
+    .delete-btn:hover,
+    .logout-btn:hover {
+      opacity: 0.9;
+    }
+
+    .action-cell {
+      white-space: nowrap;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
     }
   </style>
 </head>
@@ -69,22 +108,24 @@
   <div class="page">
     <nav class="top-nav">
       <ul>
-        <li><a href="/"><span class="nav-icon">🏠</span>Dashboard</a></li>
+        <li><a href="/index.html"><span class="nav-icon">🏠</span>Dashboard</a></li>
         <li><a href="#" class="active"><span class="nav-icon">🧾</span>Disasters</a></li>
         <li><a href="/analytics.html"><span class="nav-icon">📊</span>Analytics</a></li>
         <li><a href="/search.html"><span class="nav-icon">🔍</span>Search</a></li>
+        <li><button id="logoutBtn" class="logout-btn"><span class="nav-icon">🚪</span>Logout</button></li>
       </ul>
     </nav>
 
     <section class="hero" style="padding-top:140px;">
       <div class="hero-inner">
         <h1 class="hero-title">🧾 Manage Disasters</h1>
-        <p class="lead">Add, view, and update disaster information efficiently.</p>
+        <p class="lead">Add, view, and delete disaster information efficiently.</p>
       </div>
     </section>
 
     <section class="features" style="padding-top:40px;">
       <h2>Add New Disaster Record</h2>
+
       <form class="data-form" id="disasterForm">
         <label>Disaster Name:</label>
         <input type="text" name="DisasterName" placeholder="e.g. Cyclone Amphan" required>
@@ -126,66 +167,102 @@
 
         <button type="submit" class="primary-btn">💾 Save Record</button>
       </form>
+
       <div id="disastersList" class="disasters-list"></div>
     </section>
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:3000/api';
+    const API_BASE = "http://localhost:3000/api";
 
-    // Format date from yyyy-mm-dd to dd-mm-yyyy
-    function formatDate(dateStr) {
-      if (!dateStr) return 'N/A';
-      const parts = dateStr.split('-');
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    function getToken() {
+      return localStorage.getItem("token");
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('disasterForm');
-      form.addEventListener('submit', handleSubmit);
-      loadDisasters();
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login.html";
+    }
 
-      // Auto-fill today's date in the form
-      const dateInput = document.getElementById('date');
-      const today = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+    function checkAuth() {
+      const token = getToken();
+      if (!token) {
+        alert("Please login first.");
+        window.location.href = "/login.html";
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "N/A";
+
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+
+      return `${day}-${month}-${year}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAuth();
+
+      const form = document.getElementById("disasterForm");
+      form.addEventListener("submit", handleSubmit);
+
+      document.getElementById("logoutBtn")?.addEventListener("click", logout);
+
+      const dateInput = document.getElementById("date");
+      const today = new Date().toISOString().split("T")[0];
       dateInput.value = today;
+
+      loadDisasters();
     });
 
     async function handleSubmit(e) {
       e.preventDefault();
+
+      const token = getToken();
       const formData = new FormData(e.target);
 
       const data = {
-        DisasterName: formData.get('DisasterName'),
-        DisasterType: formData.get('DisasterType'),
-        Severity: formData.get('Severity'),
-        Date: formData.get('Date'), // yyyy-mm-dd, sent to backend
-        CountryName: formData.get('CountryName'),
-        State: formData.get('State'),
-        City: formData.get('City'),
-        Deaths: parseInt(formData.get('Deaths') || 0),
-        Injured: parseInt(formData.get('Injured') || 0),
-        Homeless: parseInt(formData.get('Homeless') || 0),
-        TotalDamage_USD: parseFloat(formData.get('TotalDamage_USD') || 0)
+        DisasterName: formData.get("DisasterName"),
+        DisasterType: formData.get("DisasterType"),
+        Severity: formData.get("Severity"),
+        Date: formData.get("Date"),
+        CountryName: formData.get("CountryName"),
+        State: formData.get("State"),
+        City: formData.get("City"),
+        Deaths: parseInt(formData.get("Deaths") || 0, 10),
+        Injured: parseInt(formData.get("Injured") || 0, 10),
+        Homeless: parseInt(formData.get("Homeless") || 0, 10),
+        TotalDamage_USD: parseFloat(formData.get("TotalDamage_USD") || 0)
       };
 
       try {
         const response = await fetch(`${API_BASE}/disasters`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify(data)
         });
 
         const result = await response.json();
+
         if (response.ok) {
-          alert('✅ ' + result.message);
+          alert("✅ " + result.message);
           e.target.reset();
+          document.getElementById("date").value = new Date().toISOString().split("T")[0];
           loadDisasters();
         } else {
-          alert('❌ Error: ' + result.error);
+          alert("❌ Error: " + (result.error || "Failed to add record"));
         }
       } catch (error) {
-        alert('❌ Error: ' + error.message);
+        alert("❌ Error: " + error.message);
       }
     }
 
@@ -195,271 +272,59 @@
         const disasters = await response.json();
         displayDisasters(disasters);
       } catch (error) {
-        console.error('Error loading disasters:', error);
+        console.error("Error loading disasters:", error);
       }
     }
 
-    function displayDisasters(disasters) {
-      const container = document.getElementById('disastersList');
-      if (!container) return;
+    async function deleteDisaster(disasterId) {
+      const token = getToken();
 
-      container.innerHTML = '<h3 style="margin-top: 30px;">Recent Disasters</h3>';
-
-      if (disasters.length === 0) {
-        container.innerHTML += '<p>No disasters found.</p>';
+      if (!confirm("Are you sure you want to delete this disaster record?")) {
         return;
       }
 
-      const table = document.createElement('table');
-      table.className = 'disasters-table';
-      table.innerHTML = `
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Date</th>
-            <th>Location</th>
-            <th>Severity</th>
-            <th>Deaths</th>
-            <th>Damage</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${disasters.map(d => `
-            <tr>
-              <td>${d.DisasterName || 'N/A'}</td>
-              <td>${d.DisasterType || 'N/A'}</td>
-              <td>${formatDate(d.Date)}</td>
-              <td>${d.City || ''}, ${d.State || ''}</td>
-              <td>${d.Severity || 'N/A'}</td>
-              <td>${d.Deaths || 0}</td>
-              <td>$${(d.TotalDamage_USD || 0).toLocaleString()}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      `;
-      container.appendChild(table);
-    }
-  </script>
-</body>
-</html>
-=======
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Disaster Management - Disasters</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    /* --- Styles for the form and table --- */
-    .disasters-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .disasters-table th {
-      background: #6a5dfc;
-      color: white;
-      padding: 12px;
-      text-align: left;
-    }
-    .disasters-table td {
-      padding: 12px;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    .disasters-table tr:hover {
-      background: #f5f5f5;
-    }
-    .data-form {
-      max-width: 600px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    .data-form label {
-      font-weight: 600;
-      color: #333;
-    }
-    .data-form input,
-    .data-form select {
-      padding: 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    .primary-btn {
-      padding: 14px 28px;
-      background: linear-gradient(90deg, #6a5dfc, #8056ff);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .primary-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(106, 93, 252, 0.3);
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <nav class="top-nav">
-      <ul>
-        <li><a href="/"><span class="nav-icon">🏠</span>Dashboard</a></li>
-        <li><a href="#" class="active"><span class="nav-icon">🧾</span>Disasters</a></li>
-        <li><a href="/analytics.html"><span class="nav-icon">📊</span>Analytics</a></li>
-        <li><a href="/search.html"><span class="nav-icon">🔍</span>Search</a></li>
-      </ul>
-    </nav>
-
-    <section class="hero" style="padding-top:140px;">
-      <div class="hero-inner">
-        <h1 class="hero-title">🧾 Manage Disasters</h1>
-        <p class="lead">Add, view, and update disaster information efficiently.</p>
-      </div>
-    </section>
-
-    <section class="features" style="padding-top:40px;">
-      <h2>Add New Disaster Record</h2>
-      <form class="data-form" id="disasterForm">
-        <label>Disaster Name:</label>
-        <input type="text" name="DisasterName" placeholder="e.g. Cyclone Amphan" required>
-
-        <label>Type:</label>
-        <input type="text" name="DisasterType" placeholder="Flood, Earthquake, etc." required>
-
-        <label>Date:</label>
-        <input type="date" name="Date" id="date" required>
-
-        <label>Country:</label>
-        <input type="text" name="CountryName" placeholder="Country name" required>
-
-        <label>State:</label>
-        <input type="text" name="State" placeholder="State/Province" required>
-
-        <label>City:</label>
-        <input type="text" name="City" placeholder="City" required>
-
-        <label>Severity:</label>
-        <select name="Severity" required>
-          <option value="Low">Low</option>
-          <option value="Moderate">Moderate</option>
-          <option value="Severe">Severe</option>
-          <option value="Catastrophic">Catastrophic</option>
-        </select>
-
-        <label>Deaths:</label>
-        <input type="number" name="Deaths" min="0" value="0">
-
-        <label>Injured:</label>
-        <input type="number" name="Injured" min="0" value="0">
-
-        <label>Homeless:</label>
-        <input type="number" name="Homeless" min="0" value="0">
-
-        <label>Total Damage (USD):</label>
-        <input type="number" name="TotalDamage_USD" min="0" step="0.01" value="0">
-
-        <button type="submit" class="primary-btn">💾 Save Record</button>
-      </form>
-      <div id="disastersList" class="disasters-list"></div>
-    </section>
-  </div>
-
-  <script>
-    const API_BASE = 'http://localhost:3000/api';
-
-    // Format date from yyyy-mm-dd to dd-mm-yyyy
-    function formatDate(dateStr) {
-      if (!dateStr) return 'N/A';
-      const parts = dateStr.split('-');
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('disasterForm');
-      form.addEventListener('submit', handleSubmit);
-      loadDisasters();
-
-      // Auto-fill today's date in the form
-      const dateInput = document.getElementById('date');
-      const today = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
-      dateInput.value = today;
-    });
-
-    async function handleSubmit(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-
-      const data = {
-        DisasterName: formData.get('DisasterName'),
-        DisasterType: formData.get('DisasterType'),
-        Severity: formData.get('Severity'),
-        Date: formData.get('Date'), // yyyy-mm-dd, sent to backend
-        CountryName: formData.get('CountryName'),
-        State: formData.get('State'),
-        City: formData.get('City'),
-        Deaths: parseInt(formData.get('Deaths') || 0),
-        Injured: parseInt(formData.get('Injured') || 0),
-        Homeless: parseInt(formData.get('Homeless') || 0),
-        TotalDamage_USD: parseFloat(formData.get('TotalDamage_USD') || 0)
-      };
-
       try {
-        const response = await fetch(`${API_BASE}/disasters`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+        const response = await fetch(`${API_BASE}/disasters/${disasterId}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
         });
 
         const result = await response.json();
+
         if (response.ok) {
-          alert('✅ ' + result.message);
-          e.target.reset();
+          alert("✅ " + result.message);
           loadDisasters();
         } else {
-          alert('❌ Error: ' + result.error);
+          alert("❌ Error: " + (result.error || "Failed to delete record"));
         }
       } catch (error) {
-        alert('❌ Error: ' + error.message);
-      }
-    }
-
-    async function loadDisasters() {
-      try {
-        const response = await fetch(`${API_BASE}/disasters`);
-        const disasters = await response.json();
-        displayDisasters(disasters);
-      } catch (error) {
-        console.error('Error loading disasters:', error);
+        alert("❌ Error: " + error.message);
       }
     }
 
     function displayDisasters(disasters) {
-      const container = document.getElementById('disastersList');
+      const container = document.getElementById("disastersList");
       if (!container) return;
 
-      container.innerHTML = '<h3 style="margin-top: 30px;">Recent Disasters</h3>';
+      container.innerHTML = "<h3 style='margin-top: 30px;'>Recent Disasters</h3>";
 
-      if (disasters.length === 0) {
-        container.innerHTML += '<p>No disasters found.</p>';
+      if (!disasters || disasters.length === 0) {
+        container.innerHTML += "<p>No disasters found.</p>";
         return;
       }
 
-      const table = document.createElement('table');
-      table.className = 'disasters-table';
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "table-wrap";
+
+      const table = document.createElement("table");
+      table.className = "disasters-table";
+
       table.innerHTML = `
         <thead>
           <tr>
+            <th>ID</th>
             <th>Name</th>
             <th>Type</th>
             <th>Date</th>
@@ -467,25 +332,31 @@
             <th>Severity</th>
             <th>Deaths</th>
             <th>Damage</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           ${disasters.map(d => `
             <tr>
-              <td>${d.DisasterName || 'N/A'}</td>
-              <td>${d.DisasterType || 'N/A'}</td>
+              <td>${d.DisasterID || "N/A"}</td>
+              <td>${d.DisasterName || "N/A"}</td>
+              <td>${d.DisasterType || "N/A"}</td>
               <td>${formatDate(d.Date)}</td>
-              <td>${d.City || ''}, ${d.State || ''}</td>
-              <td>${d.Severity || 'N/A'}</td>
+              <td>${d.City || ""}, ${d.State || ""}, ${d.CountryName || ""}</td>
+              <td>${d.Severity || "N/A"}</td>
               <td>${d.Deaths || 0}</td>
-              <td>$${(d.TotalDamage_USD || 0).toLocaleString()}</td>
+              <td>$${Number(d.TotalDamage_USD || 0).toLocaleString()}</td>
+              <td class="action-cell">
+                <button class="delete-btn" onclick="deleteDisaster('${d.DisasterID}')">Delete</button>
+              </td>
             </tr>
-          `).join('')}
+          `).join("")}
         </tbody>
       `;
-      container.appendChild(table);
+
+      tableWrap.appendChild(table);
+      container.appendChild(tableWrap);
     }
   </script>
 </body>
 </html>
->>>>>>> 20a75fbeb2859c4cd17c73b82a1176f28adae41e
