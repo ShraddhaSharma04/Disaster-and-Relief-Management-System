@@ -12,11 +12,17 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+<<<<<<< HEAD
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
+=======
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+>>>>>>> 20a75fbeb2859c4cd17c73b82a1176f28adae41e
     "mysql2": "^3.15.3"
   }
 }
