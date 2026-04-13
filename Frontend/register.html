@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - Disaster Management System</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a, #2563eb);
+      padding: 20px;
+    }
+
+    .register-container {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      padding: 32px 28px;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .register-container h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #1e3a8a;
+      font-size: 28px;
+    }
+
+    .register-container p {
+      text-align: center;
+      color: #555;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #222;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .register-btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 6px;
+    }
+
+    .register-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .message {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .error {
+      color: #dc2626;
+    }
+
+    .success {
+      color: #16a34a;
+    }
+
+    .bottom-text {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .bottom-text a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .bottom-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <h1>Register</h1>
+    <p>Create your account to access the Disaster Management System</p>
+
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="Enter your full name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="Enter your email" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Create password" required />
+      </div>
+
+      <button type="submit" class="register-btn">Register</button>
+      <div id="message" class="message"></div>
+    </form>
+
+    <div class="bottom-text">
+      Already have an account? <a href="/login.html">Login</a>
+    </div>
+  </div>
+
+  <script>
+    const registerForm = document.getElementById("registerForm");
+    const messageDiv = document.getElementById("message");
+
+    registerForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      messageDiv.textContent = "";
+      messageDiv.className = "message";
+
+      try {
+        const response = await fetch("http://localhost:3000/api/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          messageDiv.textContent = data.error || "Registration failed";
+          messageDiv.classList.add("error");
+          return;
+        }
+
+        messageDiv.textContent = "Registration successful. Redirecting to login...";
+        messageDiv.classList.add("success");
+
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 1500);
+      } catch (error) {
+        messageDiv.textContent = "Server error. Please try again.";
+        messageDiv.classList.add("error");
+      }
+    });
+  </script>
+</body>
+</html>
