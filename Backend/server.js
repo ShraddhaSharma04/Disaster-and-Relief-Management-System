@@ -199,7 +199,7 @@ app.post("/api/disasters", authenticateToken, (req, res) => {
     DisasterName,
     DisasterType,
     Severity,
-    Date,
+    Date: disasterDate,
     CountryName,
     State,
     City,
@@ -217,7 +217,7 @@ app.post("/api/disasters", authenticateToken, (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  const disasterId = DisasterID || `D${Date.now().toString().slice(-4)}`;
+  const disasterId = DisasterID || `D${Date.now().toString().slice(-6)}`;
 
   db.query(
     sql,
@@ -226,7 +226,7 @@ app.post("/api/disasters", authenticateToken, (req, res) => {
       DisasterName,
       DisasterType,
       Severity,
-      Date,
+      disasterDate,
       CountryName,
       State,
       City,
