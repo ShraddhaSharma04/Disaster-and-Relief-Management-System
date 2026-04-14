@@ -10,7 +10,7 @@
   <div class="page">
     <nav class="top-nav">
       <ul>
-        <li><a href="/"><span class="nav-icon">🏠</span>Dashboard</a></li>
+        <li><a href="/index.html"><span class="nav-icon">🏠</span>Dashboard</a></li>
         <li><a href="/disasters.html"><span class="nav-icon">🧾</span>Disasters</a></li>
         <li><a href="/analytics.html"><span class="nav-icon">📊</span>Analytics</a></li>
         <li><a href="#" class="active"><span class="nav-icon">🔍</span>Search</a></li>
@@ -37,20 +37,30 @@
       </div>
     </section>
   </div>
+
   <script>
-    const API_BASE = 'http://localhost:3000/api';
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('searchForm');
-      form.addEventListener('submit', handleSearch);
+    const API_BASE = "/api";
+
+    function checkAuth() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login first.");
+        window.location.href = "/login.html";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAuth();
+      const form = document.getElementById("searchForm");
+      form.addEventListener("submit", handleSearch);
     });
 
     async function handleSearch(e) {
       e.preventDefault();
-      const query = document.getElementById('searchInput').value;
-      
+      const query = document.getElementById("searchInput").value.trim();
+
       if (!query) {
-        alert('Please enter a search term');
+        alert("Please enter a search term");
         return;
       }
 
@@ -59,16 +69,16 @@
         const results = await response.json();
         displayResults(results);
       } catch (error) {
-        console.error('Search error:', error);
-        alert('Error searching: ' + error.message);
+        console.error("Search error:", error);
+        alert("Error searching: " + error.message);
       }
     }
 
     function displayResults(results) {
-      const container = document.getElementById('searchResults');
+      const container = document.getElementById("searchResults");
       if (!container) return;
 
-      if (results.length === 0) {
+      if (!results.length) {
         container.innerHTML = '<p class="feature-subtitle">No records found.</p>';
         return;
       }
@@ -90,20 +100,21 @@
           <tbody>
             ${results.map(r => `
               <tr>
-                <td>${r.DisasterName || 'N/A'}</td>
-                <td>${r.DisasterType || 'N/A'}</td>
-                <td>${r.Date || 'N/A'}</td>
-                <td>${r.City || ''}, ${r.State || ''}, ${r.CountryName || ''}</td>
-                <td>${r.Severity || 'N/A'}</td>
+                <td>${r.DisasterName || "N/A"}</td>
+                <td>${r.DisasterType || "N/A"}</td>
+                <td>${r.Date || "N/A"}</td>
+                <td>${r.City || ""}, ${r.State || ""}, ${r.CountryName || ""}</td>
+                <td>${r.Severity || "N/A"}</td>
                 <td>${r.Deaths || 0}</td>
-                <td>$${(r.TotalDamage_USD || 0).toLocaleString()}</td>
+                <td>$${Number(r.TotalDamage_USD || 0).toLocaleString()}</td>
               </tr>
-            `).join('')}
+            `).join("")}
           </tbody>
         </table>
       `;
     }
   </script>
+
   <style>
     .search-table {
       width: 100%;
@@ -114,19 +125,23 @@
       border-radius: 8px;
       overflow: hidden;
     }
+
     .search-table th {
       background: #6a5dfc;
       color: white;
       padding: 12px;
       text-align: left;
     }
+
     .search-table td {
       padding: 12px;
       border-bottom: 1px solid #e0e0e0;
     }
+
     .search-table tr:hover {
       background: #f5f5f5;
     }
+
     .data-form {
       max-width: 600px;
       margin: 0 auto;
@@ -134,16 +149,19 @@
       flex-direction: column;
       gap: 15px;
     }
+
     .data-form label {
       font-weight: 600;
       color: #333;
     }
+
     .data-form input {
       padding: 12px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 16px;
     }
+
     .primary-btn {
       padding: 14px 28px;
       background: linear-gradient(90deg, #6a5dfc, #8056ff);

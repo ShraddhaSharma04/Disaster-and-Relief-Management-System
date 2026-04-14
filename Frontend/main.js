@@ -1,10 +1,9 @@
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = "/api";
 
-// Check login on every page except login.html
 const token = localStorage.getItem("token");
 const currentPage = window.location.pathname.split("/").pop();
 
-if (!token && currentPage !== "login.html") {
+if (!token && currentPage !== "login.html" && currentPage !== "register.html") {
   window.location.href = "/login.html";
 }
 
@@ -42,7 +41,6 @@ async function loadCounts() {
     animateCount("totalDamage", stats.totalDamage || 0, true);
   } catch (error) {
     console.error("Error loading stats:", error);
-
     animateCount("totalDisasters", 120);
     animateCount("countriesCount", 45);
     animateCount("agenciesCount", 60);
