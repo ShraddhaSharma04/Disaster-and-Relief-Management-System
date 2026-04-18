@@ -7,10 +7,6 @@ DROP DATABASE IF EXISTS DisasterReliefManagement;
 CREATE DATABASE DisasterReliefManagement;
 USE DisasterReliefManagement;
 
--- ============================================
--- USERS TABLE (for login/register/profile)
--- ============================================
-
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -23,6 +19,10 @@ CREATE TABLE users (
     UNIQUE KEY unique_users_email (email)
 );
 
+DESCRIBE users;
+
+SELECT id, name, email, failed_attempts, lock_until
+FROM users;
 -- ============================================
 -- MAIN DISASTER TABLES
 -- ============================================
