@@ -423,6 +423,64 @@ app.get("/api/analytics", (req, res) => {
     });
 });
 
+app.put("/api/change-password", authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current password and new password are required" });
+    }
+
+    const sql = "SELECT * FROM users WHERE id = ?";
+    db.query(sql, [req.user.id], async (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const user = results[0];
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+      if (!isMatch) {
+        return res.status(401).json({ error: "Current password is incorrect" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      db.query(
+        "UPDATE users SET password = ? WHERE id = ?",
+        [hashedPassword, req.user.id],
+        (updateErr) => {
+          if (updateErr) {
+            return res.status(500).json({ error: "Failed to update password" });
+          }
+
+          return res.json({ message: "Password changed successfully" });
+        }
+      );
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.delete("/api/delete-account", authenticateToken, (req, res) => {
+  db.query("DELETE FROM users WHERE id = ?", [req.user.id], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "Failed to delete account" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({ message: "Account deleted successfully" });
+  });
+});
+
 // Home route
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../Frontend/login.html"));
