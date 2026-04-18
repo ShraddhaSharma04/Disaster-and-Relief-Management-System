@@ -37,9 +37,9 @@ db.connect((err) => {
     if (err || results.length === 0) {
       console.log("⚠️ Table 'disaster_records' not found.");
     } else {
-      db.query("SELECT COUNT(*) as count FROM disaster_records", (err, results) => {
-        if (!err) {
-          console.log(`📊 Database ready with ${results[0].count} records`);
+      db.query("SELECT COUNT(*) as count FROM disaster_records", (err2, results2) => {
+        if (!err2) {
+          console.log(`📊 Database ready with ${results2[0].count} records`);
         }
       });
     }
@@ -81,7 +81,8 @@ app.post("/api/register", async (req, res) => {
       return res.status(400).json({ error: "Name, email and password are required" });
     }
 
-    const checkSql = "SELECT * FROM users WHERE email = ?";
+    const checkSql = "SELECT * FROM users WHERE BINARY email = ?";
+
     db.query(checkSql, [email], async (err, results) => {
       if (err) {
         console.error("❌ Register check error:", err);
@@ -101,9 +102,9 @@ app.post("/api/register", async (req, res) => {
         db.query(
           insertSql,
           [name, email, hashedPassword, role || "admin"],
-          (err, result) => {
-            if (err) {
-              console.error("❌ Registration error:", err);
+          (insertErr, result) => {
+            if (insertErr) {
+              console.error("❌ Registration error:", insertErr);
               return res.status(500).json({ error: "Registration failed" });
             }
 
@@ -132,7 +133,8 @@ app.post("/api/login", (req, res) => {
     return res.status(400).json({ error: "Email and password are required" });
   }
 
-  const sql = "SELECT * FROM users WHERE email = ?";
+  const sql = "SELECT * FROM users WHERE BINARY email = ?";
+
   db.query(sql, [email], async (err, results) => {
     if (err) {
       console.error("❌ Login query error:", err);
@@ -179,6 +181,7 @@ app.post("/api/login", (req, res) => {
     }
   });
 });
+
 // Change password
 app.put("/api/change-password", authenticateToken, async (req, res) => {
   try {
@@ -189,6 +192,7 @@ app.put("/api/change-password", authenticateToken, async (req, res) => {
     }
 
     const sql = "SELECT * FROM users WHERE id = ?";
+
     db.query(sql, [req.user.id], async (err, results) => {
       if (err) {
         console.error("❌ Change password fetch error:", err);
@@ -250,14 +254,17 @@ app.delete("/api/delete-account", authenticateToken, (req, res) => {
     return res.json({ message: "✅ Account deleted successfully" });
   });
 });
+
 // Get all disasters
 app.get("/api/disasters", (req, res) => {
   const query = "SELECT * FROM disaster_records ORDER BY Date DESC LIMIT 100";
+
   db.query(query, (err, results) => {
     if (err) {
       console.error("❌ Query error:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
+
     return res.json(results);
   });
 });
@@ -325,7 +332,6 @@ app.post("/api/disasters", authenticateToken, (req, res) => {
 // Delete disaster record
 app.delete("/api/disasters/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
-
   const sql = "DELETE FROM disaster_records WHERE DisasterID = ?";
 
   db.query(sql, [id], (err, result) => {
@@ -356,10 +362,10 @@ app.get("/api/search", (req, res) => {
   }
 
   const searchQuery = `
-    SELECT * FROM disaster_records 
-    WHERE DisasterName LIKE ? 
-       OR DisasterType LIKE ? 
-       OR CountryName LIKE ? 
+    SELECT * FROM disaster_records
+    WHERE DisasterName LIKE ?
+       OR DisasterType LIKE ?
+       OR CountryName LIKE ?
        OR City LIKE ?
     ORDER BY Date DESC
     LIMIT 50
@@ -375,6 +381,7 @@ app.get("/api/search", (req, res) => {
         console.error("❌ Search error:", err);
         return res.status(500).json({ error: "Search failed" });
       }
+
       return res.json(results);
     }
   );
@@ -423,64 +430,6 @@ app.get("/api/analytics", (req, res) => {
     });
 });
 
-app.put("/api/change-password", authenticateToken, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: "Current password and new password are required" });
-    }
-
-    const sql = "SELECT * FROM users WHERE id = ?";
-    db.query(sql, [req.user.id], async (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      if (results.length === 0) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      const user = results[0];
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
-
-      if (!isMatch) {
-        return res.status(401).json({ error: "Current password is incorrect" });
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      db.query(
-        "UPDATE users SET password = ? WHERE id = ?",
-        [hashedPassword, req.user.id],
-        (updateErr) => {
-          if (updateErr) {
-            return res.status(500).json({ error: "Failed to update password" });
-          }
-
-          return res.json({ message: "Password changed successfully" });
-        }
-      );
-    });
-  } catch (error) {
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-app.delete("/api/delete-account", authenticateToken, (req, res) => {
-  db.query("DELETE FROM users WHERE id = ?", [req.user.id], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: "Failed to delete account" });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    return res.json({ message: "Account deleted successfully" });
-  });
-});
-
 // Home route
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../Frontend/login.html"));
@@ -512,4 +461,5 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`   - Disasters: http://${localIP}:${PORT}/disasters.html`);
   console.log(`   - Analytics: http://${localIP}:${PORT}/analytics.html`);
   console.log(`   - Search: http://${localIP}:${PORT}/search.html`);
+  console.log(`   - Profile: http://${localIP}:${PORT}/profile.html`);
 });
