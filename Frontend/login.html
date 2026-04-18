@@ -148,6 +148,22 @@
     const loginForm = document.getElementById("loginForm");
     const messageDiv = document.getElementById("message");
 
+    function redirectIfLoggedIn() {
+      const token = localStorage.getItem("token");
+      if (token) {
+        window.location.replace("/index.html");
+      }
+    }
+
+    redirectIfLoggedIn();
+
+    window.addEventListener("pageshow", function () {
+      const token = localStorage.getItem("token");
+      if (token) {
+        window.location.replace("/index.html");
+      }
+    });
+
     loginForm.addEventListener("submit", async function (e) {
       e.preventDefault();
 
@@ -181,13 +197,18 @@
         messageDiv.classList.add("success");
 
         setTimeout(() => {
-          window.location.href = "/index.html";
+          window.location.replace("/index.html");
         }, 1000);
       } catch (error) {
         messageDiv.textContent = "Server error. Please try again.";
         messageDiv.classList.add("error");
       }
     });
+
+    history.pushState(null, "", location.href);
+    window.onpopstate = function () {
+      history.pushState(null, "", location.href);
+    };
   </script>
 </body>
 </html>

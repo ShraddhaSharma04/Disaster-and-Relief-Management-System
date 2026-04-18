@@ -3,11 +3,15 @@ const API_BASE = "/api";
 const token = localStorage.getItem("token");
 const currentPage = window.location.pathname.split("/").pop();
 
+// Prevent protected pages from opening without token
 if (!token && currentPage !== "login.html" && currentPage !== "register.html") {
-  window.location.href = "/login.html";
+  window.location.replace("/login.html");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Re-check auth on every page load
+  protectPage();
+
   loadCounts();
 
   document.getElementById("btnDisasters")?.addEventListener("click", () => {
@@ -31,7 +35,10 @@ document.addEventListener("DOMContentLoaded", () => {
     logout();
   });
 
-  document.getElementById("logoutProfileBtn")?.addEventListener("click", logout);
+  document.getElementById("logoutProfileBtn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    logout();
+  });
 
   if (currentPage === "profile.html") {
     loadProfile();
@@ -40,8 +47,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Important: block cached back navigation after logout
+window.addEventListener("pageshow", function () {
+  protectPage();
+});
+
+function protectPage() {
+  const savedToken = localStorage.getItem("token");
+  const page = window.location.pathname.split("/").pop();
+
+  if (!savedToken && page !== "login.html" && page !== "register.html") {
+    window.location.replace("/login.html");
+  }
+}
+
 async function loadCounts() {
   try {
+    const totalDisastersEl = document.getElementById("totalDisasters");
+    const countriesCountEl = document.getElementById("countriesCount");
+    const agenciesCountEl = document.getElementById("agenciesCount");
+    const totalDamageEl = document.getElementById("totalDamage");
+
+    if (!totalDisastersEl && !countriesCountEl && !agenciesCountEl && !totalDamageEl) return;
+
     const response = await fetch(`${API_BASE}/analytics`);
     const data = await response.json();
     const stats = data.stats || {};
@@ -96,9 +124,11 @@ function loadProfile() {
 }
 
 async function changePassword() {
-  const currentPassword = document.getElementById("currentPassword").value.trim();
-  const newPassword = document.getElementById("newPassword").value.trim();
+  const currentPassword = document.getElementById("currentPassword")?.value.trim();
+  const newPassword = document.getElementById("newPassword")?.value.trim();
   const messageEl = document.getElementById("profileMessage");
+
+  if (!messageEl) return;
 
   if (!currentPassword || !newPassword) {
     messageEl.textContent = "Please fill both password fields.";
@@ -111,7 +141,7 @@ async function changePassword() {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({ currentPassword, newPassword }),
     });
@@ -138,15 +168,16 @@ async function changePassword() {
 
 async function deleteAccount() {
   const messageEl = document.getElementById("profileMessage");
-  const confirmed = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+  if (!messageEl) return;
 
+  const confirmed = confirm("Are you sure you want to delete your account? This action cannot be undone.");
   if (!confirmed) return;
 
   try {
     const response = await fetch(`${API_BASE}/delete-account`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
 
@@ -161,7 +192,7 @@ async function deleteAccount() {
     alert(data.message || "Account deleted successfully.");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/register.html";
+    window.location.replace("/register.html");
   } catch (error) {
     console.error("Delete account error:", error);
     messageEl.textContent = "Server error while deleting account.";
@@ -172,5 +203,14 @@ async function deleteAccount() {
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-  window.location.href = "/login.html";
+  window.location.replace("/login.html");
 }
+
+window.addEventListener("pageshow", function () {
+  const savedToken = localStorage.getItem("token");
+  const page = window.location.pathname.split("/").pop();
+
+  if (!savedToken && page !== "login.html" && page !== "register.html") {
+    window.location.replace("/login.html");
+  }
+});
