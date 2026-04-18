@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile - Disaster Management System</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <nav class="top-nav">
+      <ul>
+        <li><a href="/index.html"><span class="nav-icon">🏠</span>Dashboard</a></li>
+        <li><a href="/disasters.html"><span class="nav-icon">🧾</span>Disasters</a></li>
+        <li><a href="/analytics.html"><span class="nav-icon">📊</span>Analytics</a></li>
+        <li><a href="/search.html"><span class="nav-icon">🔍</span>Search</a></li>
+        <li><a href="/profile.html" class="active"><span class="nav-icon">👤</span>Profile</a></li>
+        <li><button id="logoutBtn" class="logout-btn"><span class="nav-icon">🚪</span>Logout</button></li>
+      </ul>
+    </nav>
+
+    <section class="profile-page">
+      <div class="profile-card">
+        <h1>My Profile</h1>
+        <p class="profile-subtitle">Manage your account details</p>
+
+        <div class="profile-info-box">
+          <label>Name</label>
+          <input type="text" id="profileName" readonly />
+
+          <label>Email</label>
+          <input type="email" id="profileEmail" readonly />
+        </div>
+
+        <div class="profile-actions">
+          <h2>Change Password</h2>
+          <input type="password" id="currentPassword" placeholder="Current Password" />
+          <input type="password" id="newPassword" placeholder="New Password" />
+          <button id="changePasswordBtn" class="primary-btn">Change Password</button>
+        </div>
+
+        <div class="danger-zone">
+          <h2>Danger Zone</h2>
+          <button id="deleteAccountBtn" class="danger-btn">Delete Account</button>
+          <button id="logoutProfileBtn" class="secondary-btn">Logout</button>
+        </div>
+
+        <p id="profileMessage" class="message"></p>
+      </div>
+    </section>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

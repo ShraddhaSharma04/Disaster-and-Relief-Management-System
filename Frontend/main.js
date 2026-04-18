@@ -26,7 +26,18 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "/index.html";
   });
 
-  document.getElementById("logoutBtn")?.addEventListener("click", logout);
+  document.getElementById("logoutBtn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    logout();
+  });
+
+  document.getElementById("logoutProfileBtn")?.addEventListener("click", logout);
+
+  if (currentPage === "profile.html") {
+    loadProfile();
+    document.getElementById("changePasswordBtn")?.addEventListener("click", changePassword);
+    document.getElementById("deleteAccountBtn")?.addEventListener("click", deleteAccount);
+  }
 });
 
 async function loadCounts() {
@@ -41,6 +52,7 @@ async function loadCounts() {
     animateCount("totalDamage", stats.totalDamage || 0, true);
   } catch (error) {
     console.error("Error loading stats:", error);
+
     animateCount("totalDisasters", 120);
     animateCount("countriesCount", 45);
     animateCount("agenciesCount", 60);
@@ -71,6 +83,90 @@ function animateCount(id, target, isCurrency = false) {
       el.textContent = start;
     }
   }, stepTime);
+}
+
+function loadProfile() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const nameInput = document.getElementById("profileName");
+  const emailInput = document.getElementById("profileEmail");
+
+  if (nameInput) nameInput.value = user.name || "";
+  if (emailInput) emailInput.value = user.email || "";
+}
+
+async function changePassword() {
+  const currentPassword = document.getElementById("currentPassword").value.trim();
+  const newPassword = document.getElementById("newPassword").value.trim();
+  const messageEl = document.getElementById("profileMessage");
+
+  if (!currentPassword || !newPassword) {
+    messageEl.textContent = "Please fill both password fields.";
+    messageEl.style.color = "red";
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/change-password`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      messageEl.textContent = data.error || "Failed to change password.";
+      messageEl.style.color = "red";
+      return;
+    }
+
+    messageEl.textContent = data.message || "Password changed successfully.";
+    messageEl.style.color = "green";
+
+    document.getElementById("currentPassword").value = "";
+    document.getElementById("newPassword").value = "";
+  } catch (error) {
+    console.error("Change password error:", error);
+    messageEl.textContent = "Server error while changing password.";
+    messageEl.style.color = "red";
+  }
+}
+
+async function deleteAccount() {
+  const messageEl = document.getElementById("profileMessage");
+  const confirmed = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/delete-account`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      messageEl.textContent = data.error || "Failed to delete account.";
+      messageEl.style.color = "red";
+      return;
+    }
+
+    alert(data.message || "Account deleted successfully.");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/register.html";
+  } catch (error) {
+    console.error("Delete account error:", error);
+    messageEl.textContent = "Server error while deleting account.";
+    messageEl.style.color = "red";
+  }
 }
 
 function logout() {
