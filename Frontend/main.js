@@ -1,15 +1,13 @@
 const API_BASE = "/api";
 
-const token = localStorage.getItem("token");
 const currentPage = window.location.pathname.split("/").pop();
+const publicPages = ["login.html", "register.html"];
 
-// Prevent protected pages from opening without token
-if (!token && currentPage !== "login.html" && currentPage !== "register.html") {
+if (!localStorage.getItem("token") && !publicPages.includes(currentPage)) {
   window.location.replace("/login.html");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Re-check auth on every page load
   protectPage();
 
   loadCounts();
@@ -47,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Important: block cached back navigation after logout
 window.addEventListener("pageshow", function () {
   protectPage();
 });
@@ -56,20 +53,24 @@ function protectPage() {
   const savedToken = localStorage.getItem("token");
   const page = window.location.pathname.split("/").pop();
 
-  if (!savedToken && page !== "login.html" && page !== "register.html") {
+  if (!savedToken && !publicPages.includes(page)) {
     window.location.replace("/login.html");
+  }
+
+  if (savedToken && (page === "login.html" || page === "register.html")) {
+    window.location.replace("/index.html");
   }
 }
 
 async function loadCounts() {
+  const totalDisastersEl = document.getElementById("totalDisasters");
+  const countriesCountEl = document.getElementById("countriesCount");
+  const agenciesCountEl = document.getElementById("agenciesCount");
+  const totalDamageEl = document.getElementById("totalDamage");
+
+  if (!totalDisastersEl && !countriesCountEl && !agenciesCountEl && !totalDamageEl) return;
+
   try {
-    const totalDisastersEl = document.getElementById("totalDisasters");
-    const countriesCountEl = document.getElementById("countriesCount");
-    const agenciesCountEl = document.getElementById("agenciesCount");
-    const totalDamageEl = document.getElementById("totalDamage");
-
-    if (!totalDisastersEl && !countriesCountEl && !agenciesCountEl && !totalDamageEl) return;
-
     const response = await fetch(`${API_BASE}/analytics`);
     const data = await response.json();
     const stats = data.stats || {};
@@ -115,7 +116,6 @@ function animateCount(id, target, isCurrency = false) {
 
 function loadProfile() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-
   const nameInput = document.getElementById("profileName");
   const emailInput = document.getElementById("profileEmail");
 
@@ -205,12 +205,3 @@ function logout() {
   localStorage.removeItem("user");
   window.location.replace("/login.html");
 }
-
-window.addEventListener("pageshow", function () {
-  const savedToken = localStorage.getItem("token");
-  const page = window.location.pathname.split("/").pop();
-
-  if (!savedToken && page !== "login.html" && page !== "register.html") {
-    window.location.replace("/login.html");
-  }
-});

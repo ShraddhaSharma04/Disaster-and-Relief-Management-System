@@ -153,6 +153,15 @@
     const registerForm = document.getElementById("registerForm");
     const messageDiv = document.getElementById("message");
 
+    function redirectIfLoggedIn() {
+      const token = localStorage.getItem("token");
+      if (token) {
+        window.location.replace("/index.html");
+      }
+    }
+
+    redirectIfLoggedIn();
+
     registerForm.addEventListener("submit", async function (e) {
       e.preventDefault();
 
@@ -184,8 +193,8 @@
         messageDiv.classList.add("success");
 
         setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 1500);
+          window.location.replace("/login.html");
+        }, 1200);
       } catch (error) {
         messageDiv.textContent = "Server error. Please try again.";
         messageDiv.classList.add("error");
