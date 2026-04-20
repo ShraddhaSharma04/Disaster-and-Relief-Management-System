@@ -1,11 +1,34 @@
 const API_BASE = "/api";
 
-const currentPage = window.location.pathname.split("/").pop();
-const publicPages = ["login.html", "register.html"];
+const currentPage = window.location.pathname.split("/").pop() || "index.html";
+const publicPages = ["login.html", "register.html", ""];
 
-if (!localStorage.getItem("token") && !publicPages.includes(currentPage)) {
-  window.location.replace("/login.html");
+function hasToken() {
+  return !!localStorage.getItem("token");
 }
+
+function protectPage() {
+  const page = window.location.pathname.split("/").pop() || "";
+
+  if (!hasToken() && !publicPages.includes(page)) {
+    window.location.replace("/login.html");
+    return;
+  }
+
+  if (hasToken() && (page === "login.html" || page === "register.html" || page === "")) {
+    window.location.replace("/index.html");
+  }
+}
+
+protectPage();
+
+window.addEventListener("pageshow", () => {
+  protectPage();
+});
+
+window.addEventListener("popstate", () => {
+  protectPage();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   protectPage();
@@ -45,23 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-window.addEventListener("pageshow", function () {
-  protectPage();
-});
-
-function protectPage() {
-  const savedToken = localStorage.getItem("token");
-  const page = window.location.pathname.split("/").pop();
-
-  if (!savedToken && !publicPages.includes(page)) {
-    window.location.replace("/login.html");
-  }
-
-  if (savedToken && (page === "login.html" || page === "register.html")) {
-    window.location.replace("/index.html");
-  }
-}
-
 async function loadCounts() {
   const totalDisastersEl = document.getElementById("totalDisasters");
   const countriesCountEl = document.getElementById("countriesCount");
@@ -71,7 +77,9 @@ async function loadCounts() {
   if (!totalDisastersEl && !countriesCountEl && !agenciesCountEl && !totalDamageEl) return;
 
   try {
-    const response = await fetch(`${API_BASE}/analytics`);
+    const response = await fetch(`${API_BASE}/analytics`, {
+      headers: { "Cache-Control": "no-cache" }
+    });
     const data = await response.json();
     const stats = data.stats || {};
 
@@ -81,11 +89,6 @@ async function loadCounts() {
     animateCount("totalDamage", stats.totalDamage || 0, true);
   } catch (error) {
     console.error("Error loading stats:", error);
-
-    animateCount("totalDisasters", 120);
-    animateCount("countriesCount", 45);
-    animateCount("agenciesCount", 60);
-    animateCount("totalDamage", 5200000000, true);
   }
 }
 
@@ -106,11 +109,9 @@ function animateCount(id, target, isCurrency = false) {
       clearInterval(counter);
     }
 
-    if (isCurrency) {
-      el.textContent = "$" + (start / 1000000000).toFixed(1) + "B";
-    } else {
-      el.textContent = start;
-    }
+    el.textContent = isCurrency
+      ? "$" + (start / 1000000000).toFixed(1) + "B"
+      : start;
   }, stepTime);
 }
 
@@ -141,9 +142,9 @@ async function changePassword() {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`
       },
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({ currentPassword, newPassword })
     });
 
     const data = await response.json();
@@ -160,7 +161,6 @@ async function changePassword() {
     document.getElementById("currentPassword").value = "";
     document.getElementById("newPassword").value = "";
   } catch (error) {
-    console.error("Change password error:", error);
     messageEl.textContent = "Server error while changing password.";
     messageEl.style.color = "red";
   }
@@ -177,8 +177,8 @@ async function deleteAccount() {
     const response = await fetch(`${API_BASE}/delete-account`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
     });
 
     const data = await response.json();
@@ -189,12 +189,10 @@ async function deleteAccount() {
       return;
     }
 
-    alert(data.message || "Account deleted successfully.");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.location.replace("/register.html");
   } catch (error) {
-    console.error("Delete account error:", error);
     messageEl.textContent = "Server error while deleting account.";
     messageEl.style.color = "red";
   }
@@ -203,5 +201,6 @@ async function deleteAccount() {
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  sessionStorage.clear();
   window.location.replace("/login.html");
 }
