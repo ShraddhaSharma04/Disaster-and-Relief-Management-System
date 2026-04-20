@@ -13,6 +13,12 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 app.use(express.static(path.join(__dirname, "../Frontend")));
 
 const db = mysql.createConnection({
@@ -145,9 +151,13 @@ app.post("/api/login", (req, res) => {
     const user = results[0];
     const now = new Date();
 
-    if (user.lock_until && new Date(user.lock_until) > now) {
+    if (user.lock_until && new Date(user.lock_until).getTime() > now.getTime()) {
+      const minutesLeft = Math.ceil(
+        (new Date(user.lock_until).getTime() - now.getTime()) / (1000 * 60)
+      );
+
       return res.status(423).json({
-        error: "Too many wrong attempts. Account is locked for 5 minutes."
+        error: `Account locked. Try again in ${minutesLeft} minute(s).`
       });
     }
 
@@ -155,13 +165,13 @@ app.post("/api/login", (req, res) => {
       const isMatch = await bcrypt.compare(password, user.password);
 
       if (!isMatch) {
-        const failedAttempts = (user.failed_attempts || 0) + 1;
+        const attempts = (user.failed_attempts || 0) + 1;
 
-        if (failedAttempts >= 3) {
-          const lockUntil = new Date(now.getTime() + 5 * 60 * 1000);
+        if (attempts >= 3) {
+          const lockUntil = new Date(Date.now() + 5 * 60 * 1000);
 
           db.query(
-            "UPDATE users SET failed_attempts = 0, lock_until = ? WHERE id = ?",
+            "UPDATE users SET failed_attempts = 3, lock_until = ? WHERE id = ?",
             [lockUntil, user.id],
             (updateErr) => {
               if (updateErr) {
@@ -170,26 +180,28 @@ app.post("/api/login", (req, res) => {
               }
 
               return res.status(423).json({
-                error: "Too many wrong attempts. Account locked for 5 minutes."
+                error: "Too many failed attempts. Account locked for 5 minutes."
               });
             }
           );
-        } else {
-          db.query(
-            "UPDATE users SET failed_attempts = ? WHERE id = ?",
-            [failedAttempts, user.id],
-            (updateErr) => {
-              if (updateErr) {
-                console.error("❌ Failed attempt update error:", updateErr);
-                return res.status(500).json({ error: "Failed to update attempts" });
-              }
 
-              return res.status(401).json({
-                error: `Invalid email or password. ${3 - failedAttempts} attempt(s) left.`
-              });
-            }
-          );
+          return;
         }
+
+        db.query(
+          "UPDATE users SET failed_attempts = ? WHERE id = ?",
+          [attempts, user.id],
+          (updateErr) => {
+            if (updateErr) {
+              console.error("❌ Failed attempt update error:", updateErr);
+              return res.status(500).json({ error: "Failed to update attempts" });
+            }
+
+            return res.status(401).json({
+              error: `Invalid email or password. ${3 - attempts} attempt(s) left.`
+            });
+          }
+        );
 
         return;
       }
@@ -232,7 +244,6 @@ app.post("/api/login", (req, res) => {
     }
   });
 });
-
 // Change password
 app.put("/api/change-password", authenticateToken, async (req, res) => {
   try {
