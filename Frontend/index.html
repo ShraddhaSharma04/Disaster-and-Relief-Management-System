@@ -5,13 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Disaster Management Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    (function () {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.replace("/login.html");
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="page">
-
     <nav class="top-nav">
       <ul>
-        <li><a href="/index.html"><span class="nav-icon">🏠</span>Dashboard</a></li>
+        <li><a href="/index.html" class="active"><span class="nav-icon">🏠</span>Dashboard</a></li>
         <li><a href="/disasters.html"><span class="nav-icon">🧾</span>Disasters</a></li>
         <li><a href="/analytics.html"><span class="nav-icon">📊</span>Analytics</a></li>
         <li><a href="/search.html"><span class="nav-icon">🔍</span>Search</a></li>
@@ -31,19 +38,19 @@
 
         <div class="hero-cards">
           <div class="hero-card">
-            <div id="totalDisasters" class="card-value">120+</div>
+            <div id="totalDisasters" class="card-value">0</div>
             <div class="card-label">Total Disasters</div>
           </div>
           <div class="hero-card">
-            <div id="countriesCount" class="card-value">45</div>
+            <div id="countriesCount" class="card-value">0</div>
             <div class="card-label">Countries</div>
           </div>
           <div class="hero-card">
-            <div id="agenciesCount" class="card-value">60+</div>
+            <div id="agenciesCount" class="card-value">0</div>
             <div class="card-label">Relief Agencies</div>
           </div>
           <div class="hero-card">
-            <div id="totalDamage" class="card-value">$5.2B</div>
+            <div id="totalDamage" class="card-value">$0.0B</div>
             <div class="card-label">Total Damage ($)</div>
           </div>
         </div>
@@ -59,17 +66,17 @@
         <div class="feature-box">
           <div class="feature-icon" style="color:#007bff;">💾</div>
           <h3>Data Management</h3>
-          <p>Store and manage comprehensive disaster data including casualties, damage assessments, and relief operations.</p>
+          <p>Store and manage disaster data including casualties, damage assessments, and relief operations.</p>
         </div>
         <div class="feature-box">
           <div class="feature-icon" style="color:#ff9f43;">📈</div>
           <h3>Analytics & Reporting</h3>
-          <p>Generate detailed reports and analytics to understand disaster patterns and relief effectiveness.</p>
+          <p>Generate reports and analytics to understand disaster patterns and relief effectiveness.</p>
         </div>
         <div class="feature-box">
           <div class="feature-icon" style="color:#28c76f;">🤝</div>
           <h3>Agency Coordination</h3>
-          <p>Track relief agency operations and coordinate humanitarian efforts across different organizations.</p>
+          <p>Track relief agency operations and coordinate humanitarian efforts across organizations.</p>
         </div>
       </div>
     </section>
@@ -84,7 +91,6 @@
         <button id="btnDashboard"><span class="btn-icon">🧭</span> Go to Dashboard</button>
       </div>
     </section>
-
   </div>
 
   <script src="main.js"></script>
