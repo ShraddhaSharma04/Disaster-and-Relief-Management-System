@@ -5,6 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Disaster Management - Search</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .search-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .search-table th {
+      background: #6a5dfc;
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .search-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .search-table tr:hover {
+      background: #f5f5f5;
+    }
+
+    .data-form {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .data-form label {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .data-form input {
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .primary-btn {
+      padding: 14px 28px;
+      background: linear-gradient(90deg, #6a5dfc, #8056ff);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+  <script>
+    (function () {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.replace("/login.html");
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="page">
@@ -41,27 +108,9 @@
   </div>
 
   <script>
-    const API_BASE = "/api";
-
-    function checkAuth() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Please login first.");
-        window.location.href = "/login.html";
-      }
-    }
-
-    function logout() {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login.html";
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
-      checkAuth();
       const form = document.getElementById("searchForm");
       form.addEventListener("submit", handleSearch);
-      document.getElementById("logoutBtn")?.addEventListener("click", logout);
     });
 
     async function handleSearch(e) {
@@ -123,65 +172,6 @@
       `;
     }
   </script>
-
-  <style>
-    .search-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .search-table th {
-      background: #6a5dfc;
-      color: white;
-      padding: 12px;
-      text-align: left;
-    }
-
-    .search-table td {
-      padding: 12px;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .search-table tr:hover {
-      background: #f5f5f5;
-    }
-
-    .data-form {
-      max-width: 600px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .data-form label {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .data-form input {
-      padding: 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-
-    .primary-btn {
-      padding: 14px 28px;
-      background: linear-gradient(90deg, #6a5dfc, #8056ff);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-  </style>
+  <script src="main.js"></script>
 </body>
 </html>
